@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using PetCareApplication.Dtos;
 using PetCareApplication.Data;
-using System.Diagnostics;
+using PetCareApplication.Models;
 
 namespace PetCareApplication.MapperProfiles
 {
@@ -11,11 +11,13 @@ namespace PetCareApplication.MapperProfiles
         {
         CreateMap<Pet, PetDto>().ReverseMap();
 
-            CreateMap<Data.Activity, ActivityDto>().ReverseMap();
+        CreateMap<Data.Activity, ActivityDto>().ReverseMap();
 
         CreateMap<HealthCondition, HealthConditionDto>().ReverseMap();
 
         CreateMap<Food, FoodDto>().ReverseMap();
+
+        CreateMap<Training, TrainingDto>().ReverseMap();
         }
     }
 }

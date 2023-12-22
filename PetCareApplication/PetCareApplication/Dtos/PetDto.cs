@@ -13,5 +13,6 @@ namespace PetCareApplication.Dtos
         public List<ActivityDto> ActivitiesDto { get; set; }
         public List<HealthConditionDto> HealthConditionDto { get; set; }
         public List<FoodDto> FoodDto { get; set; }
+        public List<TrainingDto> TrainingDto{get; set; }
     }
 }

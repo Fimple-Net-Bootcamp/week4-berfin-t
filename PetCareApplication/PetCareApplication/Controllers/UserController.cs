@@ -49,7 +49,27 @@ namespace PetCareApplication.Controllers
             {
                 return NotFound();
             }
-            return Ok(user);
+
+            var userDto = _mapper.Map<UserDto>(user);
+            return Ok(userDto);
+        }
+
+        [HttpGet("/users/statistics/userId")]
+        public async Task<IActionResult> GetUserStatistics(int userId)
+        {
+            var user = await _context.User
+                .Include(p=> p.Pets)
+                .FirstOrDefaultAsync(user => user.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+            var statistics = new
+            {
+                Pets = _mapper.Map<List<PetDto>>(user.Pets)
+            };
+            return Ok(statistics);
         }
 
     }
