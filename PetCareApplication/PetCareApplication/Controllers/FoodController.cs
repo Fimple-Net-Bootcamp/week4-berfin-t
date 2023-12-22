@@ -26,7 +26,7 @@ namespace PetCareApplication.Controllers
         public async Task<IActionResult> GetAll()
         {
             var food = await _context.Food.ToListAsync();
-            var foodDto = _mapper.Map<FoodDto>(food);
+            var foodDto = _mapper.Map<List<FoodDto>>(food);
 
             return Ok(foodDto);
         }

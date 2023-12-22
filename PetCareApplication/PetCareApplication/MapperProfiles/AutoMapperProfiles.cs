@@ -18,6 +18,8 @@ namespace PetCareApplication.MapperProfiles
         CreateMap<Food, FoodDto>().ReverseMap();
 
         CreateMap<Training, TrainingDto>().ReverseMap();
+
+        CreateMap<User, UserDto>().ReverseMap();
         }
     }
 }
