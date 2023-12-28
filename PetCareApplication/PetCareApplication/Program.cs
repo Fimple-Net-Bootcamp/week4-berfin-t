@@ -22,7 +22,13 @@ builder.Services.AddControllers()
     .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
-builder.Services.AddScoped<PetRepository>();
+
+builder.Services.AddScoped<PetCareRepository>();
+builder.Services.AddScoped<ActivityRepository>();
+builder.Services.AddScoped<FoodRepository>();
+builder.Services.AddScoped<HealthConditionRepository>();
+builder.Services.AddScoped<TrainingReppository>();
+builder.Services.AddScoped<UserRepository>();
 
 var app = builder.Build();
 

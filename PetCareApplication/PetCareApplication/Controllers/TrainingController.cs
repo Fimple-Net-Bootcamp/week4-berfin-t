@@ -4,6 +4,7 @@ using PetCareApplication.Dtos;
 using PetCareApplication.Validators;
 using PetCareApplication.Models;
 using PetCareApplication.Data;
+using PetCareApplication.Repositories;
 
 namespace PetCareApplication.Controllers
 {
@@ -11,13 +12,13 @@ namespace PetCareApplication.Controllers
     [Route("api/v1/trainings")]
     public class TrainingController : Controller
     {
-        private readonly PetCareDbContext _context;
+        private readonly TrainingReppository _trainingReppository;
         private readonly TrainingValidator _validator;
         private readonly IMapper _mapper;
 
-        public TrainingController(PetCareDbContext context, TrainingValidator validator, IMapper mapper)
+        public TrainingController(TrainingReppository trainingReppository, TrainingValidator validator, IMapper mapper)
         {
-            _context = context;
+            _trainingReppository = trainingReppository;
             _validator = validator;
             _mapper = mapper;
         }
@@ -34,18 +35,17 @@ namespace PetCareApplication.Controllers
 
             var entity = _mapper.Map<TrainingDto, Training>(trainingDto);
 
-            _context.Training.Add(entity);
-            await _context.SaveChangesAsync();
+            await _trainingReppository.CreateTrainingAsync(entity);
 
             return CreatedAtAction(nameof(GetById), new {petId = trainingDto.Id }, trainingDto);
 
         }
 
-        [HttpGet("petId")]
-        public IActionResult GetById(int petId)
+        [HttpGet("{petId}")]
+        public async Task<IActionResult> GetById(int petId)
         {
-            var training = _context.Training.Where(x=>x.PetId == petId).FirstOrDefault();
-            if (training == null)
+            var training = await _trainingReppository.GetPetByIdAsync(petId);
+;           if (training == null)
             {
                 return NotFound();
             }

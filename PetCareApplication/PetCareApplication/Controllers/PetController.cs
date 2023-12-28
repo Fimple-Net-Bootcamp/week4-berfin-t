@@ -1,26 +1,25 @@
 ﻿using AutoMapper;
-using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using PetCareApplication.Data;
 using PetCareApplication.Dtos;
+using PetCareApplication.Repositories;
 using PetCareApplication.Validators;
 
 namespace PetCareApplication.Controllers
 {
-    //[Authorize]
+    
     [ApiController]
     [Route("api/v1/pets")]
     public class PetController : Controller
     {
-        private readonly PetCareDbContext _context;
+        private readonly PetCareRepository _petCareRepository;
         private readonly PetValidator _validator;
         private readonly IMapper _mapper;
-        public PetController(PetCareDbContext petCareDbContext, PetValidator petValidator, IMapper mapper)
+        public PetController(PetCareRepository petCareRepository, PetValidator petValidator, IMapper mapper)
         {
-            _context = petCareDbContext;
-            _validator = petValidator;
+            _petCareRepository = petCareRepository;
             _mapper = mapper;
+            _validator = petValidator;
         }
 
         [HttpPost]
@@ -35,25 +34,25 @@ namespace PetCareApplication.Controllers
 
             var entity = _mapper.Map<PetDto, Pet>(petDto);
 
-            _context.Pet.Add(entity);
-            await _context.SaveChangesAsync();
+            await _petCareRepository.CreatePetAsync(entity);
 
-            return CreatedAtAction(nameof(GetById), new { petId = petDto.Id }, petDto);
-        }       
+            return CreatedAtAction(nameof(GetById), new { petId = entity.Id }, petDto);
+        }
 
         [HttpGet("/pets")]
         public async Task<IActionResult> GetAll()
         {
-            var pet = await _context.Pet.ToListAsync();
-            var petDto = _mapper.Map<List<PetDto>>(pet);
+            var pets = await _petCareRepository.GetAllPetsAsync();
+            var petDto = _mapper.Map<List<PetDto>>(pets);
 
             return Ok(petDto);
-        }        
+        }
 
         [HttpGet("{petId}")]
-        public IActionResult GetById(int petId)
+        public async Task<IActionResult> GetById(int petId)
         {
-            var pet = _context.Pet.Where(x => x.Id == petId).FirstOrDefault();
+            var pet = await _petCareRepository.GetPetByIdAsync(petId);
+
             if (pet == null)
             {
                 return NotFound();
@@ -66,47 +65,44 @@ namespace PetCareApplication.Controllers
         [HttpPut("{petId}")]
         public async Task<IActionResult> Update(int petId, PetDto petDto)
         {
-            var current = _context.Pet.Where(x => x.Id == petId).FirstOrDefault();
+            var current = await _petCareRepository.GetPetByIdAsync(petId);
 
             if (current is null)
             {
                 return NotFound();
             }
 
-            current.PetName = petDto.PetName;
-            current.Kind = petDto.Kind;
-            current.Age = petDto.Age;
-            current.Gender = petDto.Gender;
-
             _mapper.Map(petDto, current);
 
-            await _context.SaveChangesAsync();
+            await _petCareRepository.UpdatePetAsync(petId, current);
 
             return Ok();
-
         }
 
-        [HttpGet("/pets/statistics/petId")]
+        [HttpGet("/pets/statistics/{petId}")]
         public async Task<IActionResult> GetPetStatistics(int petId)
         {
-            var pet = await _context.Pet
-                .Include(p => p.Activities)
-                .Include(p => p.HealthConditions)
-                .Include(p => p.Foods)
-                .FirstOrDefaultAsync(pet => pet.Id == petId);
+            var pet = await _petCareRepository.GetPetByIdAsync(petId);
 
             if (pet == null)
             {
                 return NotFound();
             }
+
+            var activities = await _petCareRepository.GetPetActivitiesAsync(petId);
+            var healthConditions = await _petCareRepository.GetPetHealthConditionsAsync(petId);
+            var foods = await _petCareRepository.GetPetFoodsAsync(petId);
+
             var statistics = new
             {
-                Activities = _mapper.Map<List<ActivityDto>>(pet.Activities),
-                HealthConditions = _mapper.Map<List<HealthConditionDto>>(pet.HealthConditions),
-                Foods = _mapper.Map<List<FoodDto>>(pet.Foods)
+                Activities = _mapper.Map<List<ActivityDto>>(activities),
+                HealthConditions = _mapper.Map<List<HealthConditionDto>>(healthConditions),
+                Foods = _mapper.Map<List<FoodDto>>(foods)
             };
+
             return Ok(statistics);
         }
+
 
     }
 }

@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PetCareApplication.Data;
 using PetCareApplication.Dtos;
+using PetCareApplication.Repositories;
 using PetCareApplication.Validators;
 
 namespace PetCareApplication.Controllers
@@ -12,14 +12,14 @@ namespace PetCareApplication.Controllers
     [Route("api/v1/users")]
     public class UserController : Controller
     {
-        private readonly PetCareDbContext _context;
+        private readonly UserRepository _userRepository;
         private readonly UserValidator _validator;
         private readonly IMapper _mapper;
 
 
-        public UserController(PetCareDbContext petCareDbContext, UserValidator userValidator, IMapper mapper)
+        public UserController(UserRepository userRepository, UserValidator userValidator, IMapper mapper)
         {
-            _context = petCareDbContext;
+            _userRepository = userRepository;
             _validator = userValidator;
             _mapper = mapper;
         }
@@ -35,16 +35,15 @@ namespace PetCareApplication.Controllers
 
             var entity = _mapper.Map<UserDto, User>(userDto);
 
-            _context.User.Add(entity);
-            await _context.SaveChangesAsync();
+            await _userRepository.CreateUserAsync(entity);
 
             return CreatedAtAction(nameof(GetById), new { userId = userDto.Id }, userDto);
         }
 
         [HttpGet("{userId}")]
-        public IActionResult GetById(int userId)
+        public async Task<IActionResult> GetById(int userId)
         {
-            var user = _context.User.Where(x => x.Id == userId).FirstOrDefault();
+            var user = await _userRepository.GetPetByIdAsync(userId);
             if (user == null)
             {
                 return NotFound();
@@ -57,14 +56,14 @@ namespace PetCareApplication.Controllers
         [HttpGet("/users/statistics/userId")]
         public async Task<IActionResult> GetUserStatistics(int userId)
         {
-            var user = await _context.User
-                .Include(p=> p.Pets)
-                .FirstOrDefaultAsync(user => user.Id == userId);
+            var user = await _userRepository.GetPetByIdAsync(userId);
 
             if (user == null)
             {
                 return NotFound();
             }
+            var pets = await _userRepository.GetUserPetAsync(userId);
+
             var statistics = new
             {
                 Pets = _mapper.Map<List<PetDto>>(user.Pets)

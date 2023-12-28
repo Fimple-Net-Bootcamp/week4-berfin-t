@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PetCareApplication.Validators;
 using PetCareApplication.Dtos;
 using PetCareApplication.Data;
+using PetCareApplication.Repositories;
 
 namespace PetCareApplication.Controllers
 {
@@ -10,18 +11,18 @@ namespace PetCareApplication.Controllers
     [Route("api/v1/socialInteractions")]
     public class ActivityController : Controller
     {
-        private readonly PetCareDbContext _context; 
+        private readonly ActivityRepository _activityRepository;
         private readonly ActivityValidator _validator;
         private readonly IMapper _mapper;
 
-        public ActivityController(PetCareDbContext petCareDbContext, ActivityValidator activitiesValidator, IMapper mapper)
+        public ActivityController(ActivityRepository activityRepository, ActivityValidator activitiesValidator, IMapper mapper)
         {
-            _context = petCareDbContext;
+            _activityRepository = activityRepository;
             _validator = activitiesValidator;
             _mapper = mapper;
         }
         [HttpPost]
-        public async Task<IActionResult> Create(ActivityDto activityDto)
+        public async Task<IActionResult> CreateActivity(ActivityDto activityDto)
         {
             var result = _validator.Validate(activityDto);
 
@@ -32,16 +33,15 @@ namespace PetCareApplication.Controllers
 
             var entity = _mapper.Map<ActivityDto, Activity>(activityDto);
 
-            _context.Activity.Add(entity);
-            await _context.SaveChangesAsync();
+            await _activityRepository.CreateActivityAsync(entity);
 
             return CreatedAtAction(nameof(GetById), new { petId = activityDto.Id }, activityDto);
         }
 
         [HttpGet("{petId}")]
-        public IActionResult GetById(int petId)
+        public async Task<IActionResult> GetById(int petId)
         {
-            var activities = _context.Activity.Where(x => x.PetId == petId).FirstOrDefault();
+            var activities = await _activityRepository.GetActivityByIdAsync(petId);
 
             if (activities == null)
             {

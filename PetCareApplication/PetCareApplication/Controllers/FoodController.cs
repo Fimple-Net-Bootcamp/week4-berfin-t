@@ -4,6 +4,7 @@ using AutoMapper;
 using PetCareApplication.Dtos;
 using PetCareApplication.Validators;
 using PetCareApplication.Data;
+using PetCareApplication.Repositories;
 
 namespace PetCareApplication.Controllers
 {
@@ -11,13 +12,13 @@ namespace PetCareApplication.Controllers
     [Route("api/v1/foods")]
     public class FoodController : Controller
     {
-        private readonly PetCareDbContext _context;
+        private readonly FoodRepository _foodRepository;
         private readonly FoodValidator _validator;
         private readonly IMapper _mapper;
 
-        public FoodController(PetCareDbContext petCareDbContext, FoodValidator foodValidator, IMapper mapper)
+        public FoodController(FoodRepository foodRepository, FoodValidator foodValidator, IMapper mapper)
         {
-            _context = petCareDbContext;
+            _foodRepository = foodRepository;
             _validator = foodValidator;
             _mapper = mapper;
         }
@@ -25,16 +26,16 @@ namespace PetCareApplication.Controllers
         [HttpGet("/foods")]
         public async Task<IActionResult> GetAll()
         {
-            var food = await _context.Food.ToListAsync();
+            var food = await _foodRepository.GetAllFoodsAsync();
             var foodDto = _mapper.Map<List<FoodDto>>(food);
 
             return Ok(foodDto);
         }
 
         [HttpGet("{petId}")]
-        public IActionResult GetById(int petId)
+        public async Task<IActionResult> GetById(int petId)
         {
-            var food = _context.Food.Where(x => x.PetId == petId).FirstOrDefault();
+            var food = await _foodRepository.GetFoodByIdAsync(petId);
             if (food == null)
             {
                 return NotFound();

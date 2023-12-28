@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PetCareApplication.Data;
 using PetCareApplication.Validators;
 using PetCareApplication.Dtos;
+using PetCareApplication.Repositories;
 
 namespace PetCareApplication.Controllers
 {
@@ -10,21 +11,21 @@ namespace PetCareApplication.Controllers
     [Route("api/v1/healthConditions")]
     public class HealthConditionController : Controller
     {
-        private readonly PetCareDbContext _context;
+        private readonly HealthConditionRepository _healthConditionRepository;
         private readonly HealthConditionValidator _validator;
         private readonly IMapper _mapper;
 
-        public HealthConditionController(PetCareDbContext petCareDbContext, HealthConditionValidator healthConditionValidator, IMapper mapper)
+        public HealthConditionController(HealthConditionRepository healthConditionRepository, HealthConditionValidator healthConditionValidator, IMapper mapper)
         {
-            _context = petCareDbContext;
+            _healthConditionRepository = healthConditionRepository;
             _validator = healthConditionValidator;
             _mapper = mapper;
         }
 
         [HttpGet("{petId}")]
-        public IActionResult GetById(int petId)
+        public async Task<IActionResult> GetById(int petId)
         {
-            var healthCondition = _context.HealthCondition.Where(x => x.Id == petId).FirstOrDefault();
+            var healthCondition = await _healthConditionRepository.GetHealthConditionByIdAsync(petId);
             if (healthCondition == null)
             {                
                 return NotFound();
@@ -33,19 +34,20 @@ namespace PetCareApplication.Controllers
             return Ok(healthCondition);
         }
 
-        [HttpPatch("{petId}")]
-        public IActionResult Update(int petId, [FromBody] HealthCondition updatedHealthCondition)
+        [HttpPut("{petId}")]
+        public async Task<IActionResult> Update(int petId, HealthConditionDto healthConditionDto)
         {
-            var existingHealthCondition = _context.HealthCondition.FirstOrDefault(x => x.PetId == petId);
-
-            if (existingHealthCondition == null)
+            var current = await _healthConditionRepository.GetHealthConditionByIdAsync(petId);
+            if (current == null)
             {
                 return NotFound();
             }
 
-            _context.SaveChanges();
+            _mapper.Map(healthConditionDto, current);
 
-            return Ok(existingHealthCondition);
+            await _healthConditionRepository.UpdateHealthConditionAsync(petId, current);
+
+            return Ok();
         }
 
     }
